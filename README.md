@@ -1,6 +1,7 @@
+## AlphaFold 3 in Google Colab based on Jupyter
 ![header](docs/header_2.png)
 The notebook could be accessed here:
-[Google Colab](https://colab.research.google.com/github/1peng2333/alphafold3_colabfold_unofficial/blob/main/AlphaFold3_Colab_b1.0.2.ipynb)
+[Google Colab](https://colab.research.google.com/github/1peng2333/alphafold3_colab_jupyter/blob/main/AlphaFold3_Colab_b1.2.0.ipynb)
 
 This is an unofficial implementaion of AlphaFold 3 on Google Colab using Jupyter runtime. 
 It makes the folding parameters smooth and interactive without the need to json files editing.
@@ -8,10 +9,11 @@ Simulating the I/O interface featured in [ColabFold](https://github.com/sokrypto
 
 According to the [terms of use](https://github.com/google-deepmind/alphafold3/blob/main/WEIGHTS_TERMS_OF_USE.md). 
 This implementation could only be ran locally and you have to request AlphaFold 3 parameter from
-the AlphaFold 3 team. 
+the AlphaFold 3 team. This repo does not contain any confidential files from AlphaFold 3 team.
+This repo is based on the [AlphaFold3](https://github.com/google-deepmind/alphafold3/blob/main).
 
-# Installation
-See the [installation documentation](docs/installation_colab.md).
+## Installation
+See the updated [installation documentation](docs/installation_colab.md).
 
 ## Obtaining Model Parameters
 
