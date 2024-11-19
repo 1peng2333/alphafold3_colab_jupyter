@@ -332,3 +332,9 @@ In the future, you can use your container again by doing:
 ```sh
 docker run -i AlphaFold3
 ```
+
+To access your machine with AF3 installed remotely, when connecting to your machine use ssh:
+
+```sh
+ssh <IP> -l <Username> -L 9000:localhost:9000
+```
