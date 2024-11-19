@@ -41,6 +41,7 @@ COPY . /app/alphafold
 WORKDIR /app/alphafold
 
 # Install the Python dependencies AlphaFold 3 needs.
+RUN pip3 install --upgrade pip
 RUN pip3 install -r dev-requirements.txt
 RUN pip3 install --no-deps .
 RUN pip install jupyter
@@ -64,3 +65,4 @@ ENV XLA_CLIENT_MEM_FRACTION=3.2
 
 # Run Jupyter Runtime.
 CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=9000", "--no-browser", "--allow-root", "--NotebookApp.allow_origin='https://colab.research.google.com'", "--NotebookApp.port_retries=0"]
+

@@ -132,45 +132,35 @@ class Nhmmer(msa_tool.MsaTool):
           log_on_process_error=True,
       )
 
-      with open(output_sto_path) as f:
-        sto_out = f.read()
+      if os.path.getsize(output_sto_path) > 0:
+        with open(output_sto_path) as f:
+          a3m_out = parsers.convert_stockholm_to_a3m(
+              f, max_sequences=self._max_sequences - 1  # Query not included.
+          )
+        # Nhmmer hits are generally shorter than the query sequence. To get MSA
+        # of width equal to the query sequence, align hits to the query profile.
+        logging.info('Aligning output a3m of size %d bytes', len(a3m_out))
 
-    if sto_out:
-      a3m_out = parsers.convert_stockholm_to_a3m(sto_out)
-      # Nhmmer hits are generally shorter than the query sequence. To get an MSA
-      # of width equal to the query sequence, align hits to the query profile.
-      logging.info('Aligning output a3m of size %d bytes', len(a3m_out))
+        aligner = hmmalign.Hmmalign(self._hmmalign_binary_path)
+        target_sequence_fasta = f'>query\n{target_sequence}\n'
+        profile_builder = hmmbuild.Hmmbuild(
+            binary_path=self._hmmbuild_binary_path, alphabet=self._alphabet
+        )
+        profile = profile_builder.build_profile_from_a3m(target_sequence_fasta)
+        a3m_out = aligner.align_sequences_to_profile(
+            profile=profile, sequences_a3m=a3m_out
+        )
+        a3m_out = ''.join([target_sequence_fasta, a3m_out])
 
-      aligner = hmmalign.Hmmalign(self._hmmalign_binary_path)
-      target_sequence_fasta = f'>query\n{target_sequence}\n'
-      profile_builder = hmmbuild.Hmmbuild(
-          binary_path=self._hmmbuild_binary_path, alphabet=self._alphabet
-      )
-      profile = profile_builder.build_profile_from_a3m(target_sequence_fasta)
-      a3m_out = aligner.align_sequences_to_profile(
-          profile=profile, sequences_a3m=a3m_out
-      )
-      a3m_out = ''.join([target_sequence_fasta, a3m_out])
-
-      # Parse sequences (to remove line breaks).
-      a3m = []
-      for i, (seq, name) in enumerate(parsers.lazy_parse_fasta_string(a3m_out)):
-        if i == self._max_sequences:
-          # Apply the maximum MSA depth limit.
-          logging.info('Limiting MSA depth to %d', self._max_sequences)
-          break
-        a3m.append(f'>{name}\n{seq}')
-      num_hits = len(a3m)
-      a3m = '\n'.join(a3m)
-    else:
-      # Nhmmer returns an empty file if there are no hits.
-      # In this case return only the query sequence.
-      num_hits = 1
-      a3m = f'>query\n{target_sequence}'
+        # Parse the output a3m to remove line breaks.
+        a3m = '\n'.join(
+            [f'>{n}\n{s}' for s, n in parsers.lazy_parse_fasta_string(a3m_out)]
+        )
+      else:
+        # Nhmmer returns an empty file if there are no hits.
+        # In this case return only the query sequence.
+        a3m = f'>query\n{target_sequence}'
 
     return msa_tool.MsaToolResult(
-        target_sequence=target_sequence,
-        e_value=self._e_value,
-        a3m=a3m,
-        num_hits=num_hits,
+        target_sequence=target_sequence, e_value=self._e_value, a3m=a3m
     )

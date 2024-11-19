@@ -232,7 +232,7 @@ class Diffuser(hk.Module):
     return sample
 
   def __call__(
-      self, batch: features.BatchDict, key: bool = None
+      self, batch: features.BatchDict, key: jax.Array | None = None
   ) -> base_model.ModelResult:
     if key is None:
       key = hk.next_rng_key()

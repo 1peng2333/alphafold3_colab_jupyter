@@ -57,7 +57,7 @@ def _read_record(stream: IO[bytes]) -> tuple[str, str, np.ndarray] | None:
   if not header:
     return None
   if len(header) < header_size:
-    raise RecordError(f'Incomplete header: {header}')
+    raise RecordError(f'Incomplete header: {len(header)=} < {header_size=}')
   (scope_len, name_len, dtype_len, shape_len, arr_buffer_len) = struct.unpack(
       '<5i', header
   )
@@ -65,7 +65,7 @@ def _read_record(stream: IO[bytes]) -> tuple[str, str, np.ndarray] | None:
   payload_size = struct.calcsize(fmt) + arr_buffer_len
   payload = stream.read(payload_size)
   if len(payload) < payload_size:
-    raise RecordError(f'Incomplete payload: {payload}')
+    raise RecordError(f'Incomplete payload: {len(payload)=} < {payload_size=}')
   scope, name, dtype, *shape = struct.unpack_from(fmt, payload)
   scope = scope.decode('utf-8')
   name = name.decode('utf-8')

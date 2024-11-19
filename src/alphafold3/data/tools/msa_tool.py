@@ -21,7 +21,6 @@ class MsaToolResult:
   target_sequence: str
   e_value: float
   a3m: str
-  num_hits: int
 
 
 class MsaTool(Protocol):

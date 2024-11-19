@@ -125,11 +125,9 @@ class Hmmsearch(object):
       )
 
       with open(sto_out_path) as f:
-        sto_out = f.read()
-
-      a3m_out = parsers.convert_stockholm_to_a3m(
-          sto_out, remove_first_row_gaps=False, linewidth=60
-      )
+        a3m_out = parsers.convert_stockholm_to_a3m(
+            f, remove_first_row_gaps=False, linewidth=60
+        )
 
     return a3m_out
 

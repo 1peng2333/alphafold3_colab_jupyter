@@ -137,11 +137,13 @@ _HMMBUILD_BINARY_PATH = flags.DEFINE_string(
 )
 
 # Database paths.
-_DB_DIR = flags.DEFINE_string(
+_DB_DIR = flags.DEFINE_multi_string(
     'db_dir',
-    DEFAULT_DB_DIR.as_posix(),
-    'Path to the directory containing the databases.',
+    (DEFAULT_DB_DIR.as_posix(),),
+    'Path to the directory containing the databases. Can be specified multiple'
+    ' times to search multiple directories in order.',
 )
+
 _SMALL_BFD_DATABASE_PATH = flags.DEFINE_string(
     'small_bfd_database_path',
     '${DB_DIR}/bfd-first_non_consensus_sequences.fasta',
@@ -180,7 +182,7 @@ _RNA_CENTRAL_DATABASE_PATH = flags.DEFINE_string(
 )
 _PDB_DATABASE_PATH = flags.DEFINE_string(
     'pdb_database_path',
-    '${DB_DIR}/pdb_2022_09_28_mmcif_files.tar',
+    '${DB_DIR}/mmcif_files',
     'PDB database directory with mmCIF files path, used for template search.',
 )
 _SEQRES_DATABASE_PATH = flags.DEFINE_string(
@@ -192,15 +194,14 @@ _SEQRES_DATABASE_PATH = flags.DEFINE_string(
 # Number of CPUs to use for MSA tools.
 _JACKHMMER_N_CPU = flags.DEFINE_integer(
     'jackhmmer_n_cpu',
-    min(multiprocessing.cpu_count(), 16),
-    'Number of CPUs to use for Jackhmmer. Default to min(cpu_count, 16). Going'
+    min(multiprocessing.cpu_count(), 8),
+    'Number of CPUs to use for Jackhmmer. Default to min(cpu_count, 8). Going'
     ' beyond 8 CPUs provides very little additional speedup.',
 )
-# Tested that more cores do makes things run faster.
 _NHMMER_N_CPU = flags.DEFINE_integer(
     'nhmmer_n_cpu',
-    min(multiprocessing.cpu_count(), 16),
-    'Number of CPUs to use for Nhmmer. Default to min(cpu_count, 16). Going'
+    min(multiprocessing.cpu_count(), 8),
+    'Number of CPUs to use for Nhmmer. Default to min(cpu_count, 8). Going'
     ' beyond 8 CPUs provides very little additional speedup.',
 )
 
@@ -481,6 +482,22 @@ def process_fold_input(
   ...
 
 
+def replace_db_dir(path_with_db_dir: str, db_dirs: Sequence[str]) -> str:
+  """Replaces the DB_DIR placeholder in a path with the given DB_DIR."""
+  template = string.Template(path_with_db_dir)
+  if 'DB_DIR' in template.get_identifiers():
+    for db_dir in db_dirs:
+      path = template.substitute(DB_DIR=db_dir)
+      if os.path.exists(path):
+        return path
+    raise FileNotFoundError(
+        f'{path_with_db_dir} with ${{DB_DIR}} not found in any of {db_dirs}.'
+    )
+  if not os.path.exists(path_with_db_dir):
+    raise FileNotFoundError(f'{path_with_db_dir} does not exist.')
+  return path_with_db_dir
+
+
 def process_fold_input(
     fold_input: folding_input.Input,
     data_pipeline_config: pipeline.DataPipelineConfig | None,
@@ -593,6 +610,17 @@ def main(_):
     print(f'Failed to create output directory {_OUTPUT_DIR.value}: {e}')
     raise
 
+  if _RUN_INFERENCE.value:
+    # Fail early on incompatible devices, but only if we're running inference.
+    gpu_devices = jax.local_devices(backend='gpu')
+    if gpu_devices and float(gpu_devices[0].compute_capability) < 8.0:
+      raise ValueError(
+          'There are currently known unresolved numerical issues with using'
+          ' devices with compute capability less than 8.0. See '
+          ' https://github.com/google-deepmind/alphafold3/issues/59 for'
+          ' tracking.'
+      )
+
   notice = textwrap.wrap(
       'Running AlphaFold 3. Please note that standard AlphaFold 3 model'
       ' parameters are only available under terms of use provided at'
@@ -607,28 +635,24 @@ def main(_):
   print('\n'.join(notice))
 
   if _RUN_DATA_PIPELINE.value:
-    replace_db_dir = lambda x: string.Template(x).substitute(
-        DB_DIR=_DB_DIR.value
-    )
+    expand_path = lambda x: replace_db_dir(x, _DB_DIR.value)
     data_pipeline_config = pipeline.DataPipelineConfig(
         jackhmmer_binary_path=_JACKHMMER_BINARY_PATH.value,
         nhmmer_binary_path=_NHMMER_BINARY_PATH.value,
         hmmalign_binary_path=_HMMALIGN_BINARY_PATH.value,
         hmmsearch_binary_path=_HMMSEARCH_BINARY_PATH.value,
         hmmbuild_binary_path=_HMMBUILD_BINARY_PATH.value,
-        small_bfd_database_path=replace_db_dir(_SMALL_BFD_DATABASE_PATH.value),
-        mgnify_database_path=replace_db_dir(_MGNIFY_DATABASE_PATH.value),
-        uniprot_cluster_annot_database_path=replace_db_dir(
+        small_bfd_database_path=expand_path(_SMALL_BFD_DATABASE_PATH.value),
+        mgnify_database_path=expand_path(_MGNIFY_DATABASE_PATH.value),
+        uniprot_cluster_annot_database_path=expand_path(
             _UNIPROT_CLUSTER_ANNOT_DATABASE_PATH.value
         ),
-        uniref90_database_path=replace_db_dir(_UNIREF90_DATABASE_PATH.value),
-        ntrna_database_path=replace_db_dir(_NTRNA_DATABASE_PATH.value),
-        rfam_database_path=replace_db_dir(_RFAM_DATABASE_PATH.value),
-        rna_central_database_path=replace_db_dir(
-            _RNA_CENTRAL_DATABASE_PATH.value
-        ),
-        pdb_database_path=replace_db_dir(_PDB_DATABASE_PATH.value),
-        seqres_database_path=replace_db_dir(_SEQRES_DATABASE_PATH.value),
+        uniref90_database_path=expand_path(_UNIREF90_DATABASE_PATH.value),
+        ntrna_database_path=expand_path(_NTRNA_DATABASE_PATH.value),
+        rfam_database_path=expand_path(_RFAM_DATABASE_PATH.value),
+        rna_central_database_path=expand_path(_RNA_CENTRAL_DATABASE_PATH.value),
+        pdb_database_path=expand_path(_PDB_DATABASE_PATH.value),
+        seqres_database_path=expand_path(_SEQRES_DATABASE_PATH.value),
         jackhmmer_n_cpu=_JACKHMMER_N_CPU.value,
         nhmmer_n_cpu=_NHMMER_N_CPU.value,
     )

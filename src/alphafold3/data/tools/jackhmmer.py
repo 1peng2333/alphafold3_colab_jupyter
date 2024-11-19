@@ -124,25 +124,11 @@ class Jackhmmer(msa_tool.MsaTool):
           log_on_process_error=True,
       )
 
-      # Parse sequences (to remove line breaks).
       with open(output_sto_path) as f:
-        output_sto_str = f.read()
-      output_a3m_str = parsers.convert_stockholm_to_a3m(output_sto_str)
-      a3m = []
-      for i, (seq, name) in enumerate(
-          parsers.lazy_parse_fasta_string(output_a3m_str)
-      ):
-        if i == self.max_sequences:
-          # Apply the maximum MSA depth limit.
-          logging.info('Limiting MSA depth to %d', self.max_sequences)
-          break
-        a3m.append(f'>{name}\n{seq}')
-      num_hits = len(a3m)
-      a3m = '\n'.join(a3m)
+        a3m = parsers.convert_stockholm_to_a3m(
+            f, max_sequences=self.max_sequences
+        )
 
     return msa_tool.MsaToolResult(
-        target_sequence=target_sequence,
-        a3m=a3m,
-        e_value=self.e_value,
-        num_hits=num_hits,
+        target_sequence=target_sequence, a3m=a3m, e_value=self.e_value
     )

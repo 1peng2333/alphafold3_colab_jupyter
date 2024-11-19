@@ -125,7 +125,8 @@ def dot_product_attention(
   if implementation == "triton":
     if not triton_utils.has_triton_support():
       raise ValueError(
-          "implementation='triton' is unsupported on this GPU generation."
+          "implementation='triton' for FlashAttention is unsupported on this"
+          " GPU generation. Please use implementation='xla' instead."
       )
     return attention_triton.TritonFlashAttention()(*args, **kwargs)
 

@@ -461,6 +461,30 @@ class InferenceTest(test_utils.StructureTestCase):
             [1.0] * actual_inf.predicted_structure.num_atoms,
         )
 
+  @parameterized.product(num_db_dirs=tuple(range(1, 3)))
+  def test_replace_db_dir(self, num_db_dirs: int) -> None:
+    """Test that the db_dir is replaced correctly."""
+    db_dirs = [pathlib.Path(self.create_tempdir()) for _ in range(num_db_dirs)]
+    db_dirs_posix = [db_dir.as_posix() for db_dir in db_dirs]
+
+    for i, db_dir in enumerate(db_dirs):
+      for j in range(i + 1):
+        (db_dir / f'filename{j}.txt').write_text(f'hello world {i}')
+
+    for i in range(num_db_dirs):
+      self.assertEqual(
+          pathlib.Path(
+              run_alphafold.replace_db_dir(
+                  f'${{DB_DIR}}/filename{i}.txt', db_dirs_posix
+              )
+          ).read_text(),
+          f'hello world {i}',
+      )
+    with self.assertRaises(FileNotFoundError):
+      run_alphafold.replace_db_dir(
+          f'${{DB_DIR}}/filename{num_db_dirs}.txt', db_dirs_posix
+      )
+
 
 if __name__ == '__main__':
   absltest.main()

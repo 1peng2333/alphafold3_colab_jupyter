@@ -11,7 +11,7 @@
 """Functions for parsing various file formats."""
 
 from collections.abc import Iterable, Sequence
-from typing import TypeAlias
+from typing import IO, TypeAlias
 
 from alphafold3.cpp import fasta_iterator
 from alphafold3.cpp import msa_conversion
@@ -102,7 +102,7 @@ def convert_a3m_to_stockholm(a3m: str, max_seqs: int | None = None) -> str:
 
 
 def convert_stockholm_to_a3m(
-    stockholm_format: str,
+    stockholm: IO[str],
     max_sequences: int | None = None,
     remove_first_row_gaps: bool = True,
     linewidth: int | None = None,
@@ -115,7 +115,7 @@ def convert_stockholm_to_a3m(
   if linewidth is not None and linewidth <= 0:
     raise ValueError('linewidth must be > 0 or None')
 
-  for line in stockholm_format.splitlines():
+  for line in stockholm:
     reached_max_sequences = max_sequences and len(sequences) >= max_sequences
     line = line.strip()
     # Ignore blank lines, markup and end symbols - remainder are alignment
@@ -129,7 +129,9 @@ def convert_stockholm_to_a3m(
       sequences[seqname] = ''
     sequences[seqname] += aligned_seq
 
-  for line in stockholm_format.splitlines():
+  stockholm.seek(0)
+  for line in stockholm:
+    line = line.strip()
     if line[:4] == '#=GS':
       # Description row - example format is:
       # #=GS UniRef90_Q9H5Z4/4-78            DE [subseq from] cDNA: FLJ22755 ...
