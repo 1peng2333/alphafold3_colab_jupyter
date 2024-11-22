@@ -185,7 +185,7 @@ Mon Nov  11 12:00:00 2024
 You will need to have `git` installed to download the AlphaFold 3 repository:
 
 ```sh
-git clone https://github.com/google-deepmind/alphafold3.git
+git clone https://github.com/1peng2333/alphafold3_colab_jupyter
 ```
 
 ## Obtaining Genetic Databases
