@@ -330,5 +330,25 @@ Everything should be all set, happy folding!
 In the future, you can use your container again by doing:
 
 ```sh
-docker run -i AlphaFold3
+docker start -i AlphaFold3
+```
+
+If you can't not use docker start, you have to use docker run everytime
+
+```sh
+docker run -it \
+    --volume $HOME/af_input:/root/af_input \
+    --volume $HOME/af_output:/root/af_output \
+    --volume <MODEL_PARAMETERS_DIR>:/root/models \
+    --volume <DATABASES_DIR>:/root/public_databases \
+    --gpus=all \
+    -p 127.0.0.1:9000:9000 \
+    --name AlphaFold3 \
+    alphafold3  
+```
+
+If you want to connect a remote machine running this implementation:
+
+```sh
+ssh <Your Machine IP> -l <login User_name> -L 9000:localhost:9000
 ```
