@@ -1,7 +1,8 @@
 ## AlphaFold 3 in Google Colab based on Jupyter
 ![header](docs/header_2.png)
-The notebook could be accessed here:
-[Google Colab](https://colab.research.google.com/github/1peng2333/alphafold3_colab_jupyter/blob/main/AlphaFold3_Colab_b1.4.5.ipynb)
+
+**The notebook could be accessed here:**
+[Google Colab](https://colab.research.google.com/github/1peng2333/alphafold3_colab_jupyter/blob/main/AlphaFold3_Colab_b1_5_0.ipynb)
 
 This is an unofficial implementaion of AlphaFold 3 on Google Colab using Jupyter runtime. 
 It makes the folding parameters smooth and interactive without the need to json files editing.
